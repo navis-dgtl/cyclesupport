@@ -38,7 +38,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, currentPhase } = await req.json();
+    const { messages, currentPhase, journalContext } = await req.json();
     console.log('Received chat request with phase:', currentPhase);
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -49,6 +49,9 @@ serve(async (req) => {
     let systemPrompt = CYCLE_KNOWLEDGE;
     if (currentPhase) {
       systemPrompt += `\n\nCONTEXT: The current phase is ${currentPhase}. Provide relevant advice based on this phase.`;
+    }
+    if (journalContext) {
+      systemPrompt += journalContext + '\n\nUse these journal entries to provide more personalized advice based on what has worked well or not worked in the past.';
     }
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {

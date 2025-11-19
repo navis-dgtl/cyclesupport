@@ -3,21 +3,36 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { cyclePhases, CyclePhase } from "@/lib/cycleData";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { Trash2 } from "lucide-react";
 
 const Calendar = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedPhase, setSelectedPhase] = useState<CyclePhase>('menstrual');
-  const [cycleEntries, setCycleEntries] = useState<Record<string, CyclePhase>>({});
+  const [notes, setNotes] = useState('');
+  const [cycleEntries, setCycleEntries] = useState<Record<string, { phase: CyclePhase; notes: string | null }>>({});
   const { toast } = useToast();
 
   useEffect(() => {
     fetchCycleEntries();
   }, []);
+
+  useEffect(() => {
+    // Update notes when date changes
+    if (date) {
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const entry = cycleEntries[dateStr];
+      setNotes(entry?.notes || '');
+      if (entry?.phase) {
+        setSelectedPhase(entry.phase);
+      }
+    }
+  }, [date, cycleEntries]);
 
   const fetchCycleEntries = async () => {
     const { data, error } = await supabase
@@ -30,9 +45,12 @@ const Calendar = () => {
       return;
     }
 
-    const entriesMap: Record<string, CyclePhase> = {};
+    const entriesMap: Record<string, { phase: CyclePhase; notes: string | null }> = {};
     data?.forEach((entry) => {
-      entriesMap[entry.entry_date] = entry.phase as CyclePhase;
+      entriesMap[entry.entry_date] = {
+        phase: entry.phase as CyclePhase,
+        notes: entry.notes
+      };
     });
     setCycleEntries(entriesMap);
   };
@@ -53,6 +71,7 @@ const Calendar = () => {
       .upsert({
         entry_date: dateStr,
         phase: selectedPhase,
+        notes: notes.trim() || null,
       }, {
         onConflict: 'entry_date'
       });
@@ -74,9 +93,43 @@ const Calendar = () => {
     fetchCycleEntries();
   };
 
+  const handleDeleteEntry = async () => {
+    if (!date) {
+      toast({
+        title: "Please select a date",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const dateStr = format(date, 'yyyy-MM-dd');
+    
+    const { error } = await supabase
+      .from('cycle_entries')
+      .delete()
+      .eq('entry_date', dateStr);
+
+    if (error) {
+      toast({
+        title: "Error deleting entry",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Entry deleted",
+      description: `Removed entry for ${format(date, 'MMM d, yyyy')}`,
+    });
+
+    setNotes('');
+    fetchCycleEntries();
+  };
+
   const getPhaseForDate = (date: Date): CyclePhase | undefined => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return cycleEntries[dateStr];
+    return cycleEntries[dateStr]?.phase;
   };
 
   return (
@@ -116,7 +169,7 @@ const Calendar = () => {
 
             <Card className="p-6 space-y-4">
               <div>
-                <h3 className="text-lg font-semibold mb-4">Log Phase</h3>
+                <h3 className="text-lg font-semibold mb-4">Log Phase & Notes</h3>
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Selected Date</Label>
@@ -141,9 +194,34 @@ const Calendar = () => {
                     </Select>
                   </div>
 
-                  <Button onClick={handleSaveEntry} className="w-full">
-                    Save Entry
-                  </Button>
+                  <div className="space-y-2">
+                    <Label>Journal Notes (Optional)</Label>
+                    <Textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="What worked well? What support was helpful? Any observations..."
+                      className="min-h-[100px]"
+                      maxLength={1000}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {notes.length}/1000 characters • These notes will help the AI assistant provide better advice
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button onClick={handleSaveEntry} className="flex-1">
+                      Save Entry
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={handleDeleteEntry}
+                      disabled={!date || !cycleEntries[format(date, 'yyyy-MM-dd')]}
+                      title="Delete entry"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
 
