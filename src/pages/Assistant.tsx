@@ -5,6 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Send, Loader2, Trash2 } from "lucide-react";
+import * as Icons from "lucide-react";
+import { LucideIcon } from "lucide-react";
 import { cyclePhases, CyclePhase } from "@/lib/cycleData";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
@@ -360,11 +362,17 @@ const Assistant = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No phase selected</SelectItem>
-                        {Object.entries(cyclePhases).map(([key, phase]) => (
-                          <SelectItem key={key} value={key}>
-                            {phase.icon} {phase.name}
-                          </SelectItem>
-                        ))}
+                        {Object.entries(cyclePhases).map(([key, phase]) => {
+                          const IconComponent = Icons[phase.iconName as keyof typeof Icons] as LucideIcon;
+                          return (
+                            <SelectItem key={key} value={key}>
+                              <div className="flex items-center gap-2">
+                                <IconComponent className="w-4 h-4" />
+                                {phase.name}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
