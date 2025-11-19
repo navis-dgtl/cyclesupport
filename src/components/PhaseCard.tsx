@@ -1,16 +1,20 @@
 import { Card } from "@/components/ui/card";
 import { PhaseInfo } from "@/lib/cycleData";
+import * as Icons from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
 interface PhaseCardProps {
   phase: PhaseInfo;
 }
 
 export const PhaseCard = ({ phase }: PhaseCardProps) => {
+  const IconComponent = Icons[phase.iconName as keyof typeof Icons] as LucideIcon;
+  
   return (
     <Card className={`p-6 border-2 hover:shadow-lg transition-shadow bg-${phase.lightColor}`}>
       <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <span className="text-4xl">{phase.icon}</span>
+          <IconComponent className="w-10 h-10 text-primary" />
           <div>
             <h3 className="text-2xl font-bold text-foreground">{phase.name}</h3>
             <p className="text-sm text-muted-foreground">{phase.days}</p>

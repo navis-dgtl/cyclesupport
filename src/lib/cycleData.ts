@@ -1,3 +1,5 @@
+import { LucideIcon } from 'lucide-react';
+
 export type CyclePhase = 'menstrual' | 'follicular' | 'ovulatory' | 'luteal';
 
 export interface PhaseInfo {
@@ -5,7 +7,7 @@ export interface PhaseInfo {
   days: string;
   color: string;
   lightColor: string;
-  icon: string;
+  iconName: string;
   description: string;
   foods: string[];
   supportTips: string[];
@@ -17,7 +19,7 @@ export const cyclePhases: Record<CyclePhase, PhaseInfo> = {
     days: 'Days 1-5',
     color: 'menstrual',
     lightColor: 'menstrual-light',
-    icon: '🌙',
+    iconName: 'Moon',
     description: 'Hormone levels (estrogen & progesterone) are at their lowest. The uterine lining is shedding. Energy is naturally lower. This is a reflective, introspective time.',
     foods: [
       'Iron-rich foods (leafy greens, grass-fed beef, lentils) to replenish blood loss',
@@ -39,7 +41,7 @@ export const cyclePhases: Record<CyclePhase, PhaseInfo> = {
     days: 'Days 6-13',
     color: 'follicular',
     lightColor: 'follicular-light',
-    icon: '🌱',
+    iconName: 'Sprout',
     description: 'Estrogen rises steadily. Energy rebounds. The body is preparing to release an egg. Brain function, mood, and creativity peak. This is the "fresh start" phase.',
     foods: [
       'Light, energizing foods (salads, sprouts, fresh vegetables)',
@@ -61,7 +63,7 @@ export const cyclePhases: Record<CyclePhase, PhaseInfo> = {
     days: 'Days 14-16',
     color: 'ovulatory',
     lightColor: 'ovulatory-light',
-    icon: '☀️',
+    iconName: 'Sun',
     description: 'Estrogen peaks, testosterone surges, then egg is released. This is peak energy, confidence, and communication. Libido is highest. Skin often looks its best.',
     foods: [
       'Light, raw foods (smoothies, fresh salads)',
@@ -83,7 +85,7 @@ export const cyclePhases: Record<CyclePhase, PhaseInfo> = {
     days: 'Days 17-28',
     color: 'luteal',
     lightColor: 'luteal-light',
-    icon: '🌸',
+    iconName: 'Flower2',
     description: 'Progesterone rises then falls if no pregnancy occurs. Energy gradually declines. Body temperature rises slightly. The "nesting" phase—focus turns inward. PMS symptoms may emerge in the later days.',
     foods: [
       'Complex carbs (sweet potatoes, squash, brown rice) for serotonin support',

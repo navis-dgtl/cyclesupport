@@ -35,7 +35,7 @@ export const Navigation = () => {
           
           <div className="flex gap-1 items-center">
             <NavLink
-              to="/"
+              to="/phases"
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               activeClassName="text-foreground bg-muted"
             >

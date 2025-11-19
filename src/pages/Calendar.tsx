@@ -10,6 +10,8 @@ import { cyclePhases, CyclePhase } from "@/lib/cycleData";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Trash2 } from "lucide-react";
+import * as Icons from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
 const Calendar = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -196,11 +198,17 @@ const Calendar = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(cyclePhases).map(([key, phase]) => (
-                          <SelectItem key={key} value={key}>
-                            {phase.icon} {phase.name}
-                          </SelectItem>
-                        ))}
+                        {Object.entries(cyclePhases).map(([key, phase]) => {
+                          const IconComponent = Icons[phase.iconName as keyof typeof Icons] as LucideIcon;
+                          return (
+                            <SelectItem key={key} value={key}>
+                              <div className="flex items-center gap-2">
+                                <IconComponent className="w-4 h-4" />
+                                {phase.name}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
@@ -239,16 +247,19 @@ const Calendar = () => {
               <div className="pt-4 border-t">
                 <h4 className="font-semibold mb-3">Legend</h4>
                 <div className="space-y-3">
-                  {Object.entries(cyclePhases).map(([key, phase]) => (
-                    <div key={key} className="flex items-center gap-3">
-                      <div className={`w-6 h-6 rounded font-bold text-white flex items-center justify-center text-xs bg-${phase.color} border-2 border-${phase.color}`}>
-                        {phase.icon}
+                  {Object.entries(cyclePhases).map(([key, phase]) => {
+                    const IconComponent = Icons[phase.iconName as keyof typeof Icons] as LucideIcon;
+                    return (
+                      <div key={key} className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded font-bold text-white flex items-center justify-center bg-${phase.color} border-2 border-${phase.color}`}>
+                          <IconComponent className="w-5 h-5" />
+                        </div>
+                        <span className="text-sm font-medium">
+                          {phase.name}
+                        </span>
                       </div>
-                      <span className="text-sm font-medium">
-                        {phase.name}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </Card>
