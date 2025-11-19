@@ -105,10 +105,10 @@ const Calendar = () => {
                     luteal: (date) => getPhaseForDate(date) === 'luteal',
                   }}
                   modifiersClassNames={{
-                    menstrual: "bg-menstrual-light border-menstrual",
-                    follicular: "bg-follicular-light border-follicular",
-                    ovulatory: "bg-ovulatory-light border-ovulatory",
-                    luteal: "bg-luteal-light border-luteal",
+                    menstrual: "bg-menstrual text-white font-bold border-2 border-menstrual",
+                    follicular: "bg-follicular text-white font-bold border-2 border-follicular",
+                    ovulatory: "bg-ovulatory text-white font-bold border-2 border-ovulatory",
+                    luteal: "bg-luteal text-white font-bold border-2 border-luteal",
                   }}
                 />
               </div>
@@ -149,12 +149,14 @@ const Calendar = () => {
 
               <div className="pt-4 border-t">
                 <h4 className="font-semibold mb-3">Legend</h4>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {Object.entries(cyclePhases).map(([key, phase]) => (
-                    <div key={key} className="flex items-center gap-2">
-                      <div className={`w-4 h-4 rounded bg-${phase.lightColor} border border-${phase.color}`} />
-                      <span className="text-sm">
-                        {phase.icon} {phase.name}
+                    <div key={key} className="flex items-center gap-3">
+                      <div className={`w-6 h-6 rounded font-bold text-white flex items-center justify-center text-xs bg-${phase.color} border-2 border-${phase.color}`}>
+                        {phase.icon}
+                      </div>
+                      <span className="text-sm font-medium">
+                        {phase.name}
                       </span>
                     </div>
                   ))}

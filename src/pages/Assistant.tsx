@@ -4,11 +4,12 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Trash2 } from "lucide-react";
 import { cyclePhases, CyclePhase } from "@/lib/cycleData";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { supabase } from "@/integrations/supabase/client";
 
 type Message = {
   role: 'user' | 'assistant';
@@ -20,8 +21,116 @@ const Assistant = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentPhase, setCurrentPhase] = useState<CyclePhase | 'none'>('none');
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    loadOrCreateConversation();
+  }, []);
+
+  const loadOrCreateConversation = async () => {
+    // Try to load the most recent conversation
+    const { data: conversations, error: convError } = await supabase
+      .from('conversations')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(1);
+
+    if (convError) {
+      console.error('Error loading conversations:', convError);
+      return;
+    }
+
+    let currentConvId: string;
+
+    if (conversations && conversations.length > 0) {
+      currentConvId = conversations[0].id;
+    } else {
+      // Create a new conversation
+      const { data: newConv, error: createError } = await supabase
+        .from('conversations')
+        .insert({ title: 'New Conversation' })
+        .select()
+        .single();
+
+      if (createError || !newConv) {
+        console.error('Error creating conversation:', createError);
+        return;
+      }
+
+      currentConvId = newConv.id;
+    }
+
+    setConversationId(currentConvId);
+
+    // Load messages for this conversation
+    const { data: chatMessages, error: messagesError } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('conversation_id', currentConvId)
+      .order('created_at', { ascending: true });
+
+    if (messagesError) {
+      console.error('Error loading messages:', messagesError);
+      return;
+    }
+
+    if (chatMessages && chatMessages.length > 0) {
+      setMessages(chatMessages.map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content
+      })));
+    }
+  };
+
+  const saveMessage = async (role: 'user' | 'assistant', content: string) => {
+    if (!conversationId) return;
+
+    const { error } = await supabase
+      .from('chat_messages')
+      .insert({
+        conversation_id: conversationId,
+        role,
+        content,
+        current_phase: currentPhase === 'none' ? null : currentPhase
+      });
+
+    if (error) {
+      console.error('Error saving message:', error);
+    }
+
+    // Update conversation's updated_at timestamp
+    await supabase
+      .from('conversations')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', conversationId);
+  };
+
+  const handleClearChat = async () => {
+    if (!conversationId) return;
+
+    // Delete all messages for this conversation
+    const { error } = await supabase
+      .from('chat_messages')
+      .delete()
+      .eq('conversation_id', conversationId);
+
+    if (error) {
+      toast({
+        title: "Error clearing chat",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setMessages([]);
+    toast({
+      title: "Chat cleared",
+      description: "Your conversation has been cleared.",
+    });
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -120,6 +229,11 @@ const Assistant = () => {
         }
       }
 
+      // Save the complete assistant message
+      if (assistantMessage) {
+        await saveMessage('assistant', assistantMessage);
+      }
+
     } catch (error) {
       console.error('Error streaming chat:', error);
       toast({
@@ -140,6 +254,9 @@ const Assistant = () => {
     const userMessage = input.trim();
     setInput('');
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    
+    // Save user message
+    await saveMessage('user', userMessage);
 
     await streamChat(userMessage);
   };
@@ -162,24 +279,38 @@ const Assistant = () => {
             </p>
           </div>
 
-          <Card className="p-4">
-            <div className="space-y-2">
-              <Label>Current Phase (Optional)</Label>
-              <Select value={currentPhase} onValueChange={(value) => setCurrentPhase(value as CyclePhase | 'none')}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select current phase..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No phase selected</SelectItem>
-                  {Object.entries(cyclePhases).map(([key, phase]) => (
-                    <SelectItem key={key} value={key}>
-                      {phase.icon} {phase.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </Card>
+          <div className="flex gap-4">
+            <Card className="p-4 flex-1">
+              <div className="space-y-2">
+                <Label>Current Phase (Optional)</Label>
+                <Select value={currentPhase} onValueChange={(value) => setCurrentPhase(value as CyclePhase | 'none')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select current phase..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No phase selected</SelectItem>
+                    {Object.entries(cyclePhases).map(([key, phase]) => (
+                      <SelectItem key={key} value={key}>
+                        {phase.icon} {phase.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </Card>
+
+            <Card className="p-4 flex items-center">
+              <Button
+                variant="destructive"
+                size="icon"
+                onClick={handleClearChat}
+                disabled={messages.length === 0}
+                title="Clear chat"
+              >
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            </Card>
+          </div>
 
           <Card className="flex flex-col h-[500px]">
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
