@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
+import { ConversationList } from "@/components/ConversationList";
 
 type Message = {
   role: 'user' | 'assistant';
@@ -29,37 +30,41 @@ const Assistant = () => {
     loadOrCreateConversation();
   }, []);
 
-  const loadOrCreateConversation = async () => {
-    // Try to load the most recent conversation
-    const { data: conversations, error: convError } = await supabase
-      .from('conversations')
-      .select('*')
-      .order('updated_at', { ascending: false })
-      .limit(1);
-
-    if (convError) {
-      console.error('Error loading conversations:', convError);
-      return;
-    }
-
+  const loadOrCreateConversation = async (conversationIdToLoad?: string) => {
     let currentConvId: string;
 
-    if (conversations && conversations.length > 0) {
-      currentConvId = conversations[0].id;
+    if (conversationIdToLoad) {
+      currentConvId = conversationIdToLoad;
     } else {
-      // Create a new conversation
-      const { data: newConv, error: createError } = await supabase
+      // Try to load the most recent conversation
+      const { data: conversations, error: convError } = await supabase
         .from('conversations')
-        .insert({ title: 'New Conversation' })
-        .select()
-        .single();
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(1);
 
-      if (createError || !newConv) {
-        console.error('Error creating conversation:', createError);
+      if (convError) {
+        console.error('Error loading conversations:', convError);
         return;
       }
 
-      currentConvId = newConv.id;
+      if (conversations && conversations.length > 0) {
+        currentConvId = conversations[0].id;
+      } else {
+        // Create a new conversation
+        const { data: newConv, error: createError } = await supabase
+          .from('conversations')
+          .insert({ title: 'New Conversation' })
+          .select()
+          .single();
+
+        if (createError || !newConv) {
+          console.error('Error creating conversation:', createError);
+          return;
+        }
+
+        currentConvId = newConv.id;
+      }
     }
 
     setConversationId(currentConvId);
@@ -81,7 +86,33 @@ const Assistant = () => {
         role: msg.role as 'user' | 'assistant',
         content: msg.content
       })));
+    } else {
+      setMessages([]);
     }
+  };
+
+  const handleCreateConversation = async () => {
+    const { data: newConv, error } = await supabase
+      .from('conversations')
+      .insert({ title: 'New Conversation' })
+      .select()
+      .single();
+
+    if (error || !newConv) {
+      console.error('Error creating conversation:', error);
+      toast({
+        title: "Error creating conversation",
+        description: error?.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await loadOrCreateConversation(newConv.id);
+  };
+
+  const handleSelectConversation = async (id: string) => {
+    await loadOrCreateConversation(id);
   };
 
   const saveMessage = async (role: 'user' | 'assistant', content: string) => {
@@ -144,6 +175,22 @@ const Assistant = () => {
     setIsLoading(true);
     
     try {
+      // Load recent journal entries for context
+      const { data: recentEntries } = await supabase
+        .from('cycle_entries')
+        .select('entry_date, phase, notes')
+        .not('notes', 'is', null)
+        .order('entry_date', { ascending: false })
+        .limit(10);
+
+      let journalContext = '';
+      if (recentEntries && recentEntries.length > 0) {
+        journalContext = '\n\nRECENT JOURNAL ENTRIES:\n' + 
+          recentEntries.map(entry => 
+            `${entry.entry_date} (${cyclePhases[entry.phase as CyclePhase].name}): ${entry.notes}`
+          ).join('\n');
+      }
+
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cycle-chat`, {
         method: 'POST',
         headers: {
@@ -153,6 +200,7 @@ const Assistant = () => {
         body: JSON.stringify({
           messages: [...messages, { role: 'user', content: userMessage }],
           currentPhase: currentPhase === 'none' ? null : currentPhase,
+          journalContext,
         }),
       });
 
@@ -271,7 +319,7 @@ const Assistant = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-7xl mx-auto space-y-6">
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-bold text-foreground">AI Assistant</h2>
             <p className="text-muted-foreground">
@@ -279,38 +327,48 @@ const Assistant = () => {
             </p>
           </div>
 
-          <div className="flex gap-4">
-            <Card className="p-4 flex-1">
-              <div className="space-y-2">
-                <Label>Current Phase (Optional)</Label>
-                <Select value={currentPhase} onValueChange={(value) => setCurrentPhase(value as CyclePhase | 'none')}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select current phase..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No phase selected</SelectItem>
-                    {Object.entries(cyclePhases).map(([key, phase]) => (
-                      <SelectItem key={key} value={key}>
-                        {phase.icon} {phase.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </Card>
+          <div className="grid lg:grid-cols-[280px,1fr] gap-6">
+            <div className="lg:sticky lg:top-8 lg:h-[calc(100vh-8rem)]">
+              <ConversationList
+                currentConversationId={conversationId}
+                onSelectConversation={handleSelectConversation}
+                onCreateConversation={handleCreateConversation}
+              />
+            </div>
 
-            <Card className="p-4 flex items-center">
-              <Button
-                variant="destructive"
-                size="icon"
-                onClick={handleClearChat}
-                disabled={messages.length === 0}
-                title="Clear chat"
-              >
-                <Trash2 className="h-5 w-5" />
-              </Button>
-            </Card>
-          </div>
+            <div className="space-y-6">
+              <div className="flex gap-4">
+                <Card className="p-4 flex-1">
+                  <div className="space-y-2">
+                    <Label>Current Phase (Optional)</Label>
+                    <Select value={currentPhase} onValueChange={(value) => setCurrentPhase(value as CyclePhase | 'none')}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select current phase..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No phase selected</SelectItem>
+                        {Object.entries(cyclePhases).map(([key, phase]) => (
+                          <SelectItem key={key} value={key}>
+                            {phase.icon} {phase.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </Card>
+
+                <Card className="p-4 flex items-center">
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={handleClearChat}
+                    disabled={messages.length === 0}
+                    title="Clear chat"
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </Button>
+                </Card>
+              </div>
 
           <Card className="flex flex-col h-[500px]">
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -374,7 +432,9 @@ const Assistant = () => {
                 </Button>
               </div>
             </div>
-          </Card>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
     </div>
