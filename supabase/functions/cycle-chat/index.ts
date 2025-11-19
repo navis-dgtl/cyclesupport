@@ -38,7 +38,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, currentPhase, journalContext } = await req.json();
+    const { messages, currentPhase, journalContext, userId } = await req.json();
     console.log('Received chat request with phase:', currentPhase);
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -46,9 +46,46 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
+    // Fetch user profile for personalized context
+    let profileContext = '';
+    if (userId) {
+      try {
+        const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+        const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+        
+        const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=name,personal_context`, {
+          headers: {
+            'apikey': SUPABASE_SERVICE_ROLE_KEY!,
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+        });
+        
+        if (profileResponse.ok) {
+          const profiles = await profileResponse.json();
+          if (profiles && profiles.length > 0) {
+            const profile = profiles[0];
+            if (profile.name || profile.personal_context) {
+              profileContext = '\n\nUSER PROFILE:';
+              if (profile.name) {
+                profileContext += `\nName: ${profile.name}`;
+              }
+              if (profile.personal_context) {
+                profileContext += `\nPersonal Context: ${profile.personal_context}`;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    }
+
     let systemPrompt = CYCLE_KNOWLEDGE;
     if (currentPhase) {
       systemPrompt += `\n\nCONTEXT: The current phase is ${currentPhase}. Provide relevant advice based on this phase.`;
+    }
+    if (profileContext) {
+      systemPrompt += profileContext;
     }
     if (journalContext) {
       systemPrompt += journalContext + '\n\nUse these journal entries to provide more personalized advice based on what has worked well or not worked in the past.';
