@@ -31,6 +31,9 @@ const Assistant = () => {
   }, []);
 
   const loadOrCreateConversation = async (conversationIdToLoad?: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     let currentConvId: string;
 
     if (conversationIdToLoad) {
@@ -40,6 +43,7 @@ const Assistant = () => {
       const { data: conversations, error: convError } = await supabase
         .from('conversations')
         .select('*')
+        .eq('user_id', user.id)
         .order('updated_at', { ascending: false })
         .limit(1);
 
@@ -54,7 +58,10 @@ const Assistant = () => {
         // Create a new conversation
         const { data: newConv, error: createError } = await supabase
           .from('conversations')
-          .insert({ title: 'New Conversation' })
+          .insert({ 
+            title: 'New Conversation',
+            user_id: user.id 
+          })
           .select()
           .single();
 
@@ -92,9 +99,15 @@ const Assistant = () => {
   };
 
   const handleCreateConversation = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const { data: newConv, error } = await supabase
       .from('conversations')
-      .insert({ title: 'New Conversation' })
+      .insert({ 
+        title: 'New Conversation',
+        user_id: user.id 
+      })
       .select()
       .single();
 

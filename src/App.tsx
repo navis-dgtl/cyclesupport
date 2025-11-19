@@ -4,9 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Navigation } from "./components/Navigation";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import Phases from "./pages/Phases";
 import Calendar from "./pages/Calendar";
 import Assistant from "./pages/Assistant";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -17,11 +19,35 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Navigation />
         <Routes>
-          <Route path="/" element={<Phases />} />
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/assistant" element={<Assistant />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Navigation />
+                <Phases />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/calendar"
+            element={
+              <ProtectedRoute>
+                <Navigation />
+                <Calendar />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/assistant"
+            element={
+              <ProtectedRoute>
+                <Navigation />
+                <Assistant />
+              </ProtectedRoute>
+            }
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
