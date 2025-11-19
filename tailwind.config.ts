@@ -57,6 +57,22 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        menstrual: {
+          DEFAULT: "hsl(var(--menstrual))",
+          light: "hsl(var(--menstrual-light))",
+        },
+        follicular: {
+          DEFAULT: "hsl(var(--follicular))",
+          light: "hsl(var(--follicular-light))",
+        },
+        ovulatory: {
+          DEFAULT: "hsl(var(--ovulatory))",
+          light: "hsl(var(--ovulatory-light))",
+        },
+        luteal: {
+          DEFAULT: "hsl(var(--luteal))",
+          light: "hsl(var(--luteal-light))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
