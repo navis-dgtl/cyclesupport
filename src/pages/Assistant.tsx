@@ -17,7 +17,7 @@ const Assistant = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [currentPhase, setCurrentPhase] = useState<CyclePhase | ''>('');
+  const [currentPhase, setCurrentPhase] = useState<CyclePhase | 'none'>('none');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -41,7 +41,7 @@ const Assistant = () => {
         },
         body: JSON.stringify({
           messages: [...messages, { role: 'user', content: userMessage }],
-          currentPhase: currentPhase || null,
+          currentPhase: currentPhase === 'none' ? null : currentPhase,
         }),
       });
 
@@ -163,12 +163,12 @@ const Assistant = () => {
           <Card className="p-4">
             <div className="space-y-2">
               <Label>Current Phase (Optional)</Label>
-              <Select value={currentPhase} onValueChange={(value) => setCurrentPhase(value as CyclePhase | '')}>
+              <Select value={currentPhase} onValueChange={(value) => setCurrentPhase(value as CyclePhase | 'none')}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select current phase..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No phase selected</SelectItem>
+                  <SelectItem value="none">No phase selected</SelectItem>
                   {Object.entries(cyclePhases).map(([key, phase]) => (
                     <SelectItem key={key} value={key}>
                       {phase.icon} {phase.name}
