@@ -190,6 +190,8 @@ const Assistant = () => {
     setIsLoading(true);
     
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       // Load recent journal entries for context
       const { data: recentEntries } = await supabase
         .from('cycle_entries')
@@ -216,6 +218,7 @@ const Assistant = () => {
           messages: [...messages, { role: 'user', content: userMessage }],
           currentPhase: currentPhase === 'none' ? null : currentPhase,
           journalContext,
+          userId: user?.id,
         }),
       });
 

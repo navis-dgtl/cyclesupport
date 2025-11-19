@@ -10,6 +10,7 @@ import Phases from "./pages/Phases";
 import Calendar from "./pages/Calendar";
 import Assistant from "./pages/Assistant";
 import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,15 @@ const App = () => (
               <ProtectedRoute>
                 <Navigation />
                 <Assistant />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Navigation />
+                <Profile />
               </ProtectedRoute>
             }
           />
