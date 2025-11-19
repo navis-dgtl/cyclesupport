@@ -64,6 +64,16 @@ const Calendar = () => {
       return;
     }
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Not authenticated",
+        description: "Please sign in to save entries",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const dateStr = format(date, 'yyyy-MM-dd');
     
     const { error } = await supabase
@@ -72,8 +82,9 @@ const Calendar = () => {
         entry_date: dateStr,
         phase: selectedPhase,
         notes: notes.trim() || null,
+        user_id: user.id,
       }, {
-        onConflict: 'entry_date'
+        onConflict: 'entry_date,user_id'
       });
 
     if (error) {

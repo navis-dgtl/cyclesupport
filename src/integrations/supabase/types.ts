@@ -55,18 +55,21 @@ export type Database = {
           id: string
           title: string | null
           updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           title?: string | null
           updated_at?: string
+          user_id: string
         }
         Update: {
           created_at?: string
           id?: string
           title?: string | null
           updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -78,6 +81,7 @@ export type Database = {
           notes: string | null
           phase: Database["public"]["Enums"]["cycle_phase"]
           updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -86,6 +90,7 @@ export type Database = {
           notes?: string | null
           phase: Database["public"]["Enums"]["cycle_phase"]
           updated_at?: string
+          user_id: string
         }
         Update: {
           created_at?: string
@@ -94,6 +99,7 @@ export type Database = {
           notes?: string | null
           phase?: Database["public"]["Enums"]["cycle_phase"]
           updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
