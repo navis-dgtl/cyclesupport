@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Heart, Calendar, MessageCircle, Moon, Sprout, Sun, Flower2 } from "lucide-react";
+import { Calendar, MessageCircle, Moon, Sprout, Sun, Flower2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
+import logoHeart from "@/assets/logo-heart.png";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -49,7 +50,7 @@ const Landing = () => {
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto text-center space-y-6">
-          <Heart className="w-16 h-16 text-primary mx-auto" />
+          <img src={logoHeart} alt="Cycle Support Logo" className="w-16 h-16 mx-auto" />
           <h1 className="text-4xl md:text-6xl font-bold text-foreground">
             Cycle Support
           </h1>
@@ -75,7 +76,7 @@ const Landing = () => {
           </h2>
           <div className="grid md:grid-cols-3 gap-6">
             <Card className="p-6 text-center space-y-4">
-              <Heart className="w-12 h-12 text-primary mx-auto" />
+              <img src={logoHeart} alt="Phase Guide" className="w-12 h-12 mx-auto" />
               <h3 className="text-xl font-semibold text-foreground">Phase Guide</h3>
               <p className="text-muted-foreground">
                 Learn about all four phases with detailed information on what's happening, foods to prioritize, and practical support tips
