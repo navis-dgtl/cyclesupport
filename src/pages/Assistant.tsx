@@ -2,11 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Send, Loader2, Trash2 } from "lucide-react";
-import * as Icons from "lucide-react";
-import { LucideIcon } from "lucide-react";
+import { Send, Loader2, Trash2, Copy } from "lucide-react";
 import { cyclePhases, CyclePhase } from "@/lib/cycleData";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
@@ -23,7 +19,6 @@ const Assistant = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [currentPhase, setCurrentPhase] = useState<CyclePhase | 'none'>('none');
   const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -138,8 +133,7 @@ const Assistant = () => {
       .insert({
         conversation_id: conversationId,
         role,
-        content,
-        current_phase: currentPhase === 'none' ? null : currentPhase
+        content
       });
 
     if (error) {
@@ -216,7 +210,6 @@ const Assistant = () => {
         },
         body: JSON.stringify({
           messages: [...messages, { role: 'user', content: userMessage }],
-          currentPhase: currentPhase === 'none' ? null : currentPhase,
           journalContext,
           userId: user?.id,
         }),
@@ -334,6 +327,22 @@ const Assistant = () => {
     }
   };
 
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast({
+        title: "Copied to clipboard",
+        description: "Message copied successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to copy",
+        description: "Could not copy message to clipboard.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -355,43 +364,16 @@ const Assistant = () => {
             </div>
 
             <div className="space-y-6">
-              <div className="flex gap-4">
-                <Card className="p-4 flex-1">
-                  <div className="space-y-2">
-                    <Label>Current Phase (Optional)</Label>
-                    <Select value={currentPhase} onValueChange={(value) => setCurrentPhase(value as CyclePhase | 'none')}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select current phase..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No phase selected</SelectItem>
-                        {Object.entries(cyclePhases).map(([key, phase]) => {
-                          const IconComponent = Icons[phase.iconName as keyof typeof Icons] as LucideIcon;
-                          return (
-                            <SelectItem key={key} value={key}>
-                              <div className="flex items-center gap-2">
-                                <IconComponent className="w-4 h-4" />
-                                {phase.name}
-                              </div>
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </Card>
-
-                <Card className="p-4 flex items-center">
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={handleClearChat}
-                    disabled={messages.length === 0}
-                    title="Clear chat"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </Button>
-                </Card>
+              <div className="flex justify-end">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleClearChat}
+                  disabled={messages.length === 0}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear Chat
+                </Button>
               </div>
 
           <Card className="flex flex-col h-[500px]">
@@ -414,17 +396,27 @@ const Assistant = () => {
                     className={`max-w-[80%] rounded-lg px-4 py-2 ${
                       message.role === 'user'
                         ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-foreground'
+                        : 'bg-muted text-foreground relative group'
                     }`}
                   >
                     {message.role === 'user' ? (
                       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                     ) : (
-                      <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {message.content}
-                        </ReactMarkdown>
-                      </div>
+                      <>
+                        <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {message.content}
+                          </ReactMarkdown>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleCopyMessage(message.content)}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
