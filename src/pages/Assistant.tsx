@@ -29,9 +29,15 @@ const Assistant = () => {
   useEffect(() => {
     const autoMessage = searchParams.get('autoMessage');
     const phase = searchParams.get('phase') as CyclePhase | null;
+    const conversationIdParam = searchParams.get('conversationId');
+    const promptParam = searchParams.get('prompt');
     
-    if (autoMessage === 'support' && phase && !hasAutoSent.current) {
-      // Create a new "Send Support" conversation
+    if (autoMessage && conversationIdParam && promptParam && !hasAutoSent.current) {
+      // Handle quick message from dashboard dropdown
+      handleQuickMessage(conversationIdParam, promptParam);
+      hasAutoSent.current = true;
+    } else if (autoMessage === 'support' && phase && !hasAutoSent.current) {
+      // Create a new "Send Support" conversation (legacy)
       createSupportConversation(phase);
       hasAutoSent.current = true;
     } else if (!autoMessage) {
@@ -41,6 +47,28 @@ const Assistant = () => {
       loadOrCreateConversation();
     }
   }, [searchParams]);
+
+  const handleQuickMessage = async (convId: string, prompt: string) => {
+    hasAutoSent.current = true;
+
+    setConversationId(convId);
+    setMessages([{ role: 'user', content: prompt }]);
+    
+    // Save user message
+    await supabase
+      .from('chat_messages')
+      .insert({
+        conversation_id: convId,
+        role: 'user',
+        content: prompt
+      });
+
+    // Clear the URL parameters
+    setSearchParams({});
+
+    // Stream the AI response
+    await streamChatWithConversation(prompt, convId, [{ role: 'user', content: prompt }]);
+  };
 
   const createSupportConversation = async (phase: CyclePhase) => {
     const { data: { user } } = await supabase.auth.getUser();
