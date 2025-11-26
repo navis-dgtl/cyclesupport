@@ -105,23 +105,44 @@ export type Database = {
       }
       profiles: {
         Row: {
+          average_cycle_length: number | null
           created_at: string
+          dietary_preferences: string | null
+          favorite_activities: string | null
           id: string
+          last_period_start: string | null
+          love_language: string | null
           name: string | null
+          onboarding_completed: boolean | null
+          partner_name: string | null
           personal_context: string | null
           updated_at: string
         }
         Insert: {
+          average_cycle_length?: number | null
           created_at?: string
+          dietary_preferences?: string | null
+          favorite_activities?: string | null
           id: string
+          last_period_start?: string | null
+          love_language?: string | null
           name?: string | null
+          onboarding_completed?: boolean | null
+          partner_name?: string | null
           personal_context?: string | null
           updated_at?: string
         }
         Update: {
+          average_cycle_length?: number | null
           created_at?: string
+          dietary_preferences?: string | null
+          favorite_activities?: string | null
           id?: string
+          last_period_start?: string | null
+          love_language?: string | null
           name?: string | null
+          onboarding_completed?: boolean | null
+          partner_name?: string | null
           personal_context?: string | null
           updated_at?: string
         }
