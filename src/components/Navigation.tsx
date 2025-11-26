@@ -1,5 +1,5 @@
 import { NavLink } from "@/components/NavLink";
-import { Calendar, Heart, MessageCircle, User, Home, BarChart3 } from "lucide-react";
+import { Calendar, MessageCircle, User, Home, BarChart3, Heart } from "lucide-react";
 
 export const Navigation = () => {
 
@@ -20,15 +20,6 @@ export const Navigation = () => {
             >
               <Home className="w-4 h-4" />
               <span className="hidden sm:inline">Today</span>
-            </NavLink>
-            
-            <NavLink
-              to="/phases"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              activeClassName="text-foreground bg-muted"
-            >
-              <Heart className="w-4 h-4" />
-              <span className="hidden sm:inline">Phases</span>
             </NavLink>
             
             <NavLink

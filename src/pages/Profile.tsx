@@ -4,16 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Loader2, LogOut } from "lucide-react";
+import { format } from "date-fns";
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
-  const [personalContext, setPersonalContext] = useState("");
+  const [partnerName, setPartnerName] = useState("");
+  const [loveLanguage, setLoveLanguage] = useState("");
+  const [dietaryPreferences, setDietaryPreferences] = useState("");
+  const [favoriteActivities, setFavoriteActivities] = useState("");
+  const [lastPeriodStart, setLastPeriodStart] = useState("");
+  const [averageCycleLength, setAverageCycleLength] = useState("28");
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -38,7 +45,12 @@ const Profile = () => {
 
       if (data) {
         setName(data.name || "");
-        setPersonalContext(data.personal_context || "");
+        setPartnerName(data.partner_name || "");
+        setLoveLanguage(data.love_language || "");
+        setDietaryPreferences(data.dietary_preferences || "");
+        setFavoriteActivities(data.favorite_activities || "");
+        setLastPeriodStart(data.last_period_start || "");
+        setAverageCycleLength(data.average_cycle_length?.toString() || "28");
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -65,7 +77,12 @@ const Profile = () => {
         .upsert({
           id: user.id,
           name,
-          personal_context: personalContext,
+          partner_name: partnerName,
+          love_language: loveLanguage,
+          dietary_preferences: dietaryPreferences,
+          favorite_activities: favoriteActivities,
+          last_period_start: lastPeriodStart || null,
+          average_cycle_length: parseInt(averageCycleLength),
         });
 
       if (error) throw error;
@@ -116,13 +133,13 @@ const Profile = () => {
           <CardHeader>
             <CardTitle>Profile Settings</CardTitle>
             <CardDescription>
-              Customize your profile and help the AI assistant understand you better
+              Customize your profile to get personalized support advice
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">Your Name</Label>
                 <Input
                   id="name"
                   type="text"
@@ -133,22 +150,87 @@ const Profile = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="context">Personal Context</Label>
-                <Textarea
-                  id="context"
-                  value={personalContext}
-                  onChange={(e) => setPersonalContext(e.target.value)}
-                  placeholder="Share information that would help the AI assistant support you better, such as:
-• Food preferences and dietary restrictions
-• Primary love languages
-• Important personal details
-• Preferences and interests
-• Any other context that would be helpful"
-                  className="min-h-[200px]"
+                <Label htmlFor="partner-name">Partner's Name</Label>
+                <Input
+                  id="partner-name"
+                  type="text"
+                  value={partnerName}
+                  onChange={(e) => setPartnerName(e.target.value)}
+                  placeholder="Her name"
                 />
                 <p className="text-sm text-muted-foreground">
-                  This information will be used by the AI assistant to provide more personalized and relevant support.
+                  Helps personalize AI responses
                 </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="love-language">Primary Love Language</Label>
+                <Select value={loveLanguage} onValueChange={setLoveLanguage}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a love language" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border z-50">
+                    <SelectItem value="words">Words of Affirmation</SelectItem>
+                    <SelectItem value="acts">Acts of Service</SelectItem>
+                    <SelectItem value="gifts">Receiving Gifts</SelectItem>
+                    <SelectItem value="time">Quality Time</SelectItem>
+                    <SelectItem value="touch">Physical Touch</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  How she most feels loved and supported
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dietary">Dietary Preferences/Restrictions</Label>
+                <Textarea
+                  id="dietary"
+                  value={dietaryPreferences}
+                  onChange={(e) => setDietaryPreferences(e.target.value)}
+                  placeholder="e.g., vegetarian, loves chocolate, avoids dairy, allergies"
+                  className="min-h-[100px]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="activities">Favorite Activities</Label>
+                <Textarea
+                  id="activities"
+                  value={favoriteActivities}
+                  onChange={(e) => setFavoriteActivities(e.target.value)}
+                  placeholder="e.g., yoga, watching movies, long walks, cooking together"
+                  className="min-h-[100px]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="last-period">Last Period Start Date</Label>
+                  <Input
+                    id="last-period"
+                    type="date"
+                    value={lastPeriodStart}
+                    onChange={(e) => setLastPeriodStart(e.target.value)}
+                    max={format(new Date(), "yyyy-MM-dd")}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cycle-length">Average Cycle Length</Label>
+                  <Select value={averageCycleLength} onValueChange={setAverageCycleLength}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border border-border z-50">
+                      {[21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35].map((days) => (
+                        <SelectItem key={days} value={days.toString()}>
+                          {days} days
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <Button type="submit" disabled={saving} className="w-full">

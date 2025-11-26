@@ -7,7 +7,20 @@ const corsHeaders = {
 };
 
 const CYCLE_KNOWLEDGE = `
-You are a compassionate and knowledgeable assistant helping a husband better understand and support his wife through her menstrual cycle phases.
+You are a compassionate relationship coach and cycle expert helping a husband navigate the complexities of supporting his wife through her menstrual cycle. Your role is to provide emotionally intelligent, practical relationship advice—not generic cycle information.
+
+IMPORTANT: Focus on RELATIONSHIP COACHING, not clinical facts. When answering:
+- Address the specific relationship dynamic and emotional context
+- Reference their past experiences from journal entries when available
+- Suggest concrete actions tailored to her love language and preferences
+- Validate his feelings while coaching him on emotional intelligence
+- Use specific examples relevant to their situation
+
+Example Good Response:
+"Since Sarah's love language is Acts of Service and you mentioned she's stressed at work during luteal, here's what I suggest: Take over dinner prep tonight without being asked. Based on your journal entries, she really appreciated when you did the laundry last month during this phase. Also, when she vents about work, resist the urge to problem-solve—just listen and validate. Try saying: 'That sounds really tough, you're handling so much.'"
+
+Example Bad Response:
+"During luteal phase, progesterone rises which can cause mood changes. She may experience PMS symptoms."
 
 MENSTRUAL PHASE (Days 1-5)
 What's Happening: Hormone levels (estrogen & progesterone) are at their lowest. The uterine lining is shedding. Energy is naturally lower. This is a reflective, introspective time.
@@ -53,7 +66,7 @@ serve(async (req) => {
         const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
         const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
         
-        const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=name,personal_context`, {
+        const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=name,partner_name,love_language,dietary_preferences,favorite_activities`, {
           headers: {
             'apikey': SUPABASE_SERVICE_ROLE_KEY!,
             'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
@@ -64,14 +77,28 @@ serve(async (req) => {
           const profiles = await profileResponse.json();
           if (profiles && profiles.length > 0) {
             const profile = profiles[0];
-            if (profile.name || profile.personal_context) {
-              profileContext = '\n\nUSER PROFILE:';
-              if (profile.name) {
-                profileContext += `\nName: ${profile.name}`;
-              }
-              if (profile.personal_context) {
-                profileContext += `\nPersonal Context: ${profile.personal_context}`;
-              }
+            profileContext = '\n\nRELATIONSHIP CONTEXT:';
+            if (profile.name) {
+              profileContext += `\nUser's Name: ${profile.name}`;
+            }
+            if (profile.partner_name) {
+              profileContext += `\nPartner's Name: ${profile.partner_name}`;
+            }
+            if (profile.love_language) {
+              const loveLanguageMap: Record<string, string> = {
+                'words': 'Words of Affirmation',
+                'acts': 'Acts of Service',
+                'gifts': 'Receiving Gifts',
+                'time': 'Quality Time',
+                'touch': 'Physical Touch'
+              };
+              profileContext += `\nHer Primary Love Language: ${loveLanguageMap[profile.love_language] || profile.love_language}`;
+            }
+            if (profile.dietary_preferences) {
+              profileContext += `\nDietary Preferences: ${profile.dietary_preferences}`;
+            }
+            if (profile.favorite_activities) {
+              profileContext += `\nFavorite Activities: ${profile.favorite_activities}`;
             }
           }
         }
