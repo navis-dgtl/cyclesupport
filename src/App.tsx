@@ -6,14 +6,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Navigation } from "./components/Navigation";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import Landing from "./pages/Landing";
+import Auth from "./pages/Auth";
+import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Phases from "./pages/Phases";
 import Help from "./pages/Help";
 import Calendar from "./pages/Calendar";
 import Assistant from "./pages/Assistant";
 import Insights from "./pages/Insights";
-import Auth from "./pages/Auth";
-import Onboarding from "./pages/Onboarding";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
