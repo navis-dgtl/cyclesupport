@@ -26,7 +26,7 @@ const Auth = () => {
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate('/phases');
+        navigate('/dashboard');
       }
     });
   }, [navigate]);
@@ -116,7 +116,7 @@ const Auth = () => {
         return;
       }
 
-      navigate('/phases');
+      navigate('/dashboard');
       
     } catch (error) {
       if (error instanceof z.ZodError) {
