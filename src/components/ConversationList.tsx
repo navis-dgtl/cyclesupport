@@ -142,7 +142,7 @@ export const ConversationList = ({
                       {conv.title || 'New Conversation'}
                     </p>
                     <p className="text-xs opacity-70">
-                      {format(new Date(conv.updated_at), 'MMM d, yyyy')}
+                      {format(new Date(conv.created_at), 'MMM d, yyyy')}
                     </p>
                   </div>
                   {currentConversationId === conv.id && (
