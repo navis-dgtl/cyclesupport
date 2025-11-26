@@ -27,27 +27,207 @@ const Assistant = () => {
   const hasAutoSent = useRef(false);
 
   useEffect(() => {
-    loadOrCreateConversation();
-  }, []);
-
-  // Handle auto-message from dashboard
-  useEffect(() => {
     const autoMessage = searchParams.get('autoMessage');
     const phase = searchParams.get('phase') as CyclePhase | null;
     
-    if (autoMessage === 'support' && phase && conversationId && !hasAutoSent.current && !isLoading) {
-      hasAutoSent.current = true;
-      const phaseName = cyclePhases[phase]?.name || phase;
-      const prompt = `She's currently in the ${phaseName} phase. Can you write me a short, sweet, and supportive text message I can send her right now? Keep it personal and loving, around 2-3 sentences.`;
-      
-      setMessages(prev => [...prev, { role: 'user', content: prompt }]);
-      saveMessage('user', prompt);
-      streamChat(prompt);
-      
-      // Clear the URL parameters
-      setSearchParams({});
+    if (autoMessage === 'support' && phase && !hasAutoSent.current) {
+      // Create a new "Send Support" conversation
+      createSupportConversation(phase);
+    } else {
+      // Normal load
+      loadOrCreateConversation();
     }
-  }, [conversationId, searchParams, setSearchParams, isLoading]);
+  }, []);
+
+  const createSupportConversation = async (phase: CyclePhase) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    hasAutoSent.current = true;
+
+    // Create new conversation with specific title
+    const { data: newConv, error } = await supabase
+      .from('conversations')
+      .insert({ 
+        title: 'Send Support',
+        user_id: user.id 
+      })
+      .select()
+      .single();
+
+    if (error || !newConv) {
+      console.error('Error creating conversation:', error);
+      toast({
+        title: "Error creating conversation",
+        description: error?.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setConversationId(newConv.id);
+    setMessages([]);
+
+    // Auto-send the support message
+    const phaseName = cyclePhases[phase]?.name || phase;
+    const prompt = `She's currently in the ${phaseName} phase. Can you write me a short, sweet, and supportive text message I can send her right now? Keep it personal and loving, around 2-3 sentences.`;
+    
+    setMessages([{ role: 'user', content: prompt }]);
+    
+    // Save user message
+    await supabase
+      .from('chat_messages')
+      .insert({
+        conversation_id: newConv.id,
+        role: 'user',
+        content: prompt
+      });
+
+    // Clear the URL parameters
+    setSearchParams({});
+
+    // Stream the AI response
+    await streamChatWithConversation(prompt, newConv.id, [{ role: 'user', content: prompt }]);
+  };
+
+  const streamChatWithConversation = async (userMessage: string, convId: string, currentMessages: Message[]) => {
+    setIsLoading(true);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Load recent journal entries for context
+      const { data: recentEntries } = await supabase
+        .from('cycle_entries')
+        .select('entry_date, phase, notes')
+        .not('notes', 'is', null)
+        .order('entry_date', { ascending: false })
+        .limit(10);
+
+      let journalContext = '';
+      if (recentEntries && recentEntries.length > 0) {
+        journalContext = '\n\nRECENT JOURNAL ENTRIES:\n' + 
+          recentEntries.map(entry => 
+            `${entry.entry_date} (${cyclePhases[entry.phase as CyclePhase].name}): ${entry.notes}`
+          ).join('\n');
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cycle-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          messages: currentMessages,
+          journalContext,
+          userId: user?.id,
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          toast({
+            title: "Rate limit exceeded",
+            description: "Please try again later.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (response.status === 402) {
+          toast({
+            title: "Payment required",
+            description: "Please add funds to continue using the AI assistant.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw new Error('Failed to get response');
+      }
+
+      if (!response.body) throw new Error('No response body');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = '';
+      let assistantMessage = '';
+      let streamDone = false;
+
+      // Add empty assistant message that we'll update
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') {
+            streamDone = true;
+            break;
+          }
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantMessage += content;
+              setMessages(prev => {
+                const newMessages = [...prev];
+                newMessages[newMessages.length - 1] = {
+                  role: 'assistant',
+                  content: assistantMessage
+                };
+                return newMessages;
+              });
+            }
+          } catch {
+            textBuffer = line + '\n' + textBuffer;
+            break;
+          }
+        }
+      }
+
+      // Save the complete assistant message
+      if (assistantMessage) {
+        await supabase
+          .from('chat_messages')
+          .insert({
+            conversation_id: convId,
+            role: 'assistant',
+            content: assistantMessage
+          });
+
+        // Update conversation's updated_at timestamp
+        await supabase
+          .from('conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', convId);
+      }
+
+    } catch (error) {
+      console.error('Error streaming chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to get response from AI assistant.",
+        variant: "destructive",
+      });
+      // Remove the empty assistant message if error occurred
+      setMessages(prev => prev.slice(0, -1));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadOrCreateConversation = async (conversationIdToLoad?: string) => {
     const { data: { user } } = await supabase.auth.getUser();
