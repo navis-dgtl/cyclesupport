@@ -512,15 +512,36 @@ const Assistant = () => {
     }
   };
 
+  const generateConversationTitle = (message: string): string => {
+    // Take first 3-4 words, max 40 characters
+    const words = message.trim().split(/\s+/).slice(0, 4);
+    let title = words.join(' ');
+    if (title.length > 40) {
+      title = title.substring(0, 37) + '...';
+    }
+    return title;
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
     const userMessage = input.trim();
+    const isFirstMessage = messages.length === 0;
+    
     setInput('');
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     
     // Save user message
     await saveMessage('user', userMessage);
+
+    // Auto-rename conversation if this is the first message
+    if (isFirstMessage && conversationId) {
+      const title = generateConversationTitle(userMessage);
+      await supabase
+        .from('conversations')
+        .update({ title })
+        .eq('id', conversationId);
+    }
 
     await streamChat(userMessage);
   };
