@@ -1,28 +1,7 @@
 import { NavLink } from "@/components/NavLink";
-import { Button } from "@/components/ui/button";
-import { Calendar, Heart, MessageCircle, LogOut, User, Home, BarChart3 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { Calendar, Heart, MessageCircle, User, Home, BarChart3 } from "lucide-react";
 
 export const Navigation = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    
-    if (error) {
-      toast({
-        title: "Error signing out",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    navigate('/auth');
-  };
 
   return (
     <nav className="bg-card border-b border-border sticky top-0 z-50 backdrop-blur-sm bg-card/95">
@@ -87,17 +66,6 @@ export const Navigation = () => {
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Profile</span>
             </NavLink>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="ml-2"
-              title="Sign out"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline ml-2">Sign Out</span>
-            </Button>
           </div>
         </div>
       </div>
