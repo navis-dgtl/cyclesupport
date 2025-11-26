@@ -1,6 +1,6 @@
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
-import { Calendar, Heart, MessageCircle, LogOut, User } from "lucide-react";
+import { Calendar, Heart, MessageCircle, LogOut, User, Home, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +35,15 @@ export const Navigation = () => {
           
           <div className="flex gap-1 items-center">
             <NavLink
+              to="/dashboard"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              activeClassName="text-foreground bg-muted"
+            >
+              <Home className="w-4 h-4" />
+              <span className="hidden sm:inline">Today</span>
+            </NavLink>
+            
+            <NavLink
               to="/phases"
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               activeClassName="text-foreground bg-muted"
@@ -59,6 +68,15 @@ export const Navigation = () => {
             >
               <MessageCircle className="w-4 h-4" />
               <span className="hidden sm:inline">AI Assistant</span>
+            </NavLink>
+            
+            <NavLink
+              to="/insights"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              activeClassName="text-foreground bg-muted"
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Insights</span>
             </NavLink>
             
             <NavLink

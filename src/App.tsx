@@ -6,9 +6,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Navigation } from "./components/Navigation";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import Landing from "./pages/Landing";
+import Dashboard from "./pages/Dashboard";
 import Phases from "./pages/Phases";
 import Calendar from "./pages/Calendar";
 import Assistant from "./pages/Assistant";
+import Insights from "./pages/Insights";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -24,6 +26,15 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Navigation />
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/phases"
             element={
@@ -48,6 +59,15 @@ const App = () => (
               <ProtectedRoute>
                 <Navigation />
                 <Assistant />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/insights"
+            element={
+              <ProtectedRoute>
+                <Navigation />
+                <Insights />
               </ProtectedRoute>
             }
           />
