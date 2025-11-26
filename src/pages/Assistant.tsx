@@ -33,11 +33,14 @@ const Assistant = () => {
     if (autoMessage === 'support' && phase && !hasAutoSent.current) {
       // Create a new "Send Support" conversation
       createSupportConversation(phase);
-    } else {
-      // Normal load
+      hasAutoSent.current = true;
+    } else if (!autoMessage) {
+      // Reset the flag when not in auto-send mode
+      hasAutoSent.current = false;
+      // Normal load - only if no autoMessage param
       loadOrCreateConversation();
     }
-  }, []);
+  }, [searchParams]);
 
   const createSupportConversation = async (phase: CyclePhase) => {
     const { data: { user } } = await supabase.auth.getUser();
