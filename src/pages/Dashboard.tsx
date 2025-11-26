@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cyclePhases, CyclePhase } from "@/lib/cycleData";
-import { Calendar, Heart, MessageSquare, Flower, ArrowRight } from "lucide-react";
+import { Calendar, Heart, MessageSquare, Flower, ArrowRight, Moon, Sprout, Sun, Flower2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format, differenceInDays, parseISO } from "date-fns";
@@ -124,7 +124,15 @@ const Dashboard = () => {
   }
 
   const phaseInfo = cyclePhases[currentPhase];
-  const PhaseIcon = require('lucide-react')[phaseInfo.iconName];
+  
+  // Map icon names to actual icon components
+  const iconMap = {
+    Moon,
+    Sprout,
+    Sun,
+    Flower2
+  };
+  const PhaseIcon = iconMap[phaseInfo.iconName as keyof typeof iconMap];
 
   return (
     <div className="min-h-screen bg-background">
