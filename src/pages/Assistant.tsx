@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,10 +23,31 @@ const Assistant = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const hasAutoSent = useRef(false);
 
   useEffect(() => {
     loadOrCreateConversation();
   }, []);
+
+  // Handle auto-message from dashboard
+  useEffect(() => {
+    const autoMessage = searchParams.get('autoMessage');
+    const phase = searchParams.get('phase') as CyclePhase | null;
+    
+    if (autoMessage === 'support' && phase && conversationId && !hasAutoSent.current && !isLoading) {
+      hasAutoSent.current = true;
+      const phaseName = cyclePhases[phase]?.name || phase;
+      const prompt = `She's currently in the ${phaseName} phase. Can you write me a short, sweet, and supportive text message I can send her right now? Keep it personal and loving, around 2-3 sentences.`;
+      
+      setMessages(prev => [...prev, { role: 'user', content: prompt }]);
+      saveMessage('user', prompt);
+      streamChat(prompt);
+      
+      // Clear the URL parameters
+      setSearchParams({});
+    }
+  }, [conversationId, searchParams, setSearchParams, isLoading]);
 
   const loadOrCreateConversation = async (conversationIdToLoad?: string) => {
     const { data: { user } } = await supabase.auth.getUser();

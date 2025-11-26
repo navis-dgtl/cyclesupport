@@ -84,7 +84,13 @@ const Dashboard = () => {
     {
       icon: Heart,
       label: "Send Support",
-      action: () => toast.success("Remember: small gestures matter! A text, a hug, or her favorite snack."),
+      action: () => {
+        if (currentPhase) {
+          navigate(`/assistant?autoMessage=support&phase=${currentPhase}`);
+        } else {
+          toast.error("No current phase data available");
+        }
+      },
       color: "secondary"
     },
     {
