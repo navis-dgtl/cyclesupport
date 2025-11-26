@@ -64,7 +64,7 @@ const Onboarding = () => {
       }
 
       console.log('[Onboarding] Navigating to dashboard');
-      navigate("/dashboard");
+      window.location.href = "/dashboard";
     } catch (error) {
       console.error("[Onboarding] Error skipping onboarding:", error);
     }
@@ -196,7 +196,7 @@ const Onboarding = () => {
       });
 
       console.log('[Onboarding] Navigating to dashboard');
-      navigate("/dashboard");
+      window.location.href = "/dashboard";
     } catch (error) {
       console.error("[Onboarding] Error completing onboarding:", error);
       toast({
