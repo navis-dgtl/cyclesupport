@@ -17,26 +17,36 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   useEffect(() => {
     const checkAuthAndOnboarding = async () => {
+      console.log('[ProtectedRoute] Checking auth and onboarding...');
+      
       // Check for existing session
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('[ProtectedRoute] Session:', !!session);
       setSession(session);
       setUser(session?.user ?? null);
 
       // Check onboarding status if authenticated and not on onboarding page
       if (session?.user && location.pathname !== '/onboarding') {
+        console.log('[ProtectedRoute] Checking onboarding for user:', session.user.id);
         try {
-          const { data: profile } = await supabase
+          const { data: profile, error } = await supabase
             .from('profiles')
             .select('onboarding_completed')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
 
-          if (profile && !profile.onboarding_completed) {
+          console.log('[ProtectedRoute] Profile data:', profile, 'Error:', error);
+
+          // If no profile exists or onboarding not completed, redirect to onboarding
+          if (!profile || !profile.onboarding_completed) {
+            console.log('[ProtectedRoute] Needs onboarding');
             setNeedsOnboarding(true);
           }
         } catch (error) {
-          console.error('Error checking onboarding status:', error);
+          console.error('[ProtectedRoute] Error checking onboarding status:', error);
         }
+      } else {
+        console.log('[ProtectedRoute] Skipping onboarding check (on onboarding page or no user)');
       }
 
       setLoading(false);
@@ -47,6 +57,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('[ProtectedRoute] Auth state changed:', event);
         setSession(session);
         setUser(session?.user ?? null);
       }

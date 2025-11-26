@@ -12,6 +12,7 @@ import { Loader2, ArrowRight, ArrowLeft, Heart } from "lucide-react";
 import { addDays, format } from "date-fns";
 
 const Onboarding = () => {
+  console.log('[Onboarding] Component rendering');
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
@@ -36,29 +37,50 @@ const Onboarding = () => {
   };
 
   const handleSkip = async () => {
+    console.log('[Onboarding] Skip clicked');
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.error('[Onboarding] No user found when skipping');
+        return;
+      }
 
-      await supabase
+      console.log('[Onboarding] Marking onboarding as completed for user:', user.id);
+      const { error } = await supabase
         .from("profiles")
-        .update({ onboarding_completed: true })
-        .eq("id", user.id);
+        .upsert({ 
+          id: user.id,
+          onboarding_completed: true 
+        });
 
+      if (error) {
+        console.error('[Onboarding] Error updating profile:', error);
+        toast({
+          title: "Error",
+          description: "Failed to skip onboarding",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('[Onboarding] Navigating to dashboard');
       navigate("/dashboard");
     } catch (error) {
-      console.error("Error skipping onboarding:", error);
+      console.error("[Onboarding] Error skipping onboarding:", error);
     }
   };
 
   const handleComplete = async () => {
+    console.log('[Onboarding] Complete clicked');
     setLoading(true);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        console.error('[Onboarding] No user found when completing');
         throw new Error("No user found");
       }
+      console.log('[Onboarding] User ID:', user.id);
 
       // Calculate current phase based on last period start
       const periodStart = new Date(lastPeriodStart);
@@ -77,10 +99,12 @@ const Onboarding = () => {
         currentPhase = "luteal";
       }
 
-      // Update profile with all onboarding data
+      // Update profile with all onboarding data (use upsert to handle new users)
+      console.log('[Onboarding] Updating profile...');
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({
+        .upsert({
+          id: user.id,
           partner_name: partnerName || null,
           last_period_start: lastPeriodStart || null,
           average_cycle_length: parseInt(averageCycleLength),
@@ -88,10 +112,13 @@ const Onboarding = () => {
           dietary_preferences: dietaryPreferences || null,
           favorite_activities: favoriteActivities || null,
           onboarding_completed: true,
-        })
-        .eq("id", user.id);
+        });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('[Onboarding] Profile update error:', profileError);
+        throw profileError;
+      }
+      console.log('[Onboarding] Profile updated successfully');
 
       // Create calendar entries for current cycle
       if (lastPeriodStart) {
@@ -168,12 +195,13 @@ const Onboarding = () => {
         description: "Your profile is set up. Let's get started!",
       });
 
+      console.log('[Onboarding] Navigating to dashboard');
       navigate("/dashboard");
     } catch (error) {
-      console.error("Error completing onboarding:", error);
+      console.error("[Onboarding] Error completing onboarding:", error);
       toast({
         title: "Error",
-        description: "Failed to complete onboarding",
+        description: error instanceof Error ? error.message : "Failed to complete onboarding",
         variant: "destructive",
       });
     } finally {
