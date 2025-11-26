@@ -12,7 +12,6 @@ import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Phases from "./pages/Phases";
-import Help from "./pages/Help";
 import Calendar from "./pages/Calendar";
 import Assistant from "./pages/Assistant";
 import Insights from "./pages/Insights";
@@ -54,15 +53,6 @@ const App = () => {
                 <ProtectedRoute>
                   <Navigation />
                   <Phases />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/help"
-              element={
-                <ProtectedRoute>
-                  <Navigation />
-                  <Help />
                 </ProtectedRoute>
               }
             />

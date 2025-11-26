@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Loader2, LogOut } from "lucide-react";
+import { Loader2, LogOut, BookOpen, MessageSquare, BarChart } from "lucide-react";
 import { format } from "date-fns";
 
 const Profile = () => {
@@ -244,6 +244,53 @@ const Profile = () => {
                 )}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* Resources Section */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Resources</CardTitle>
+            <CardDescription>
+              Quick access to helpful features
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button
+              variant="outline"
+              className="w-full justify-start h-auto py-4"
+              onClick={() => navigate('/phases')}
+            >
+              <BookOpen className="mr-3 h-5 w-5" />
+              <div className="text-left">
+                <div className="font-semibold">Phase Guide</div>
+                <div className="text-xs text-muted-foreground">Learn about all 4 phases</div>
+              </div>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="w-full justify-start h-auto py-4"
+              onClick={() => navigate('/assistant')}
+            >
+              <MessageSquare className="mr-3 h-5 w-5" />
+              <div className="text-left">
+                <div className="font-semibold">AI Assistant</div>
+                <div className="text-xs text-muted-foreground">Get personalized advice</div>
+              </div>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="w-full justify-start h-auto py-4"
+              onClick={() => navigate('/insights')}
+            >
+              <BarChart className="mr-3 h-5 w-5" />
+              <div className="text-left">
+                <div className="font-semibold">Cycle Insights</div>
+                <div className="text-xs text-muted-foreground">View patterns & trends</div>
+              </div>
+            </Button>
           </CardContent>
         </Card>
 
